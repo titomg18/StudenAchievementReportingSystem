@@ -6,7 +6,7 @@ type User struct {
 	ID           string    `json:"id"`
 	Username     string    `json:"username"`
 	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"`
+	PasswordHash string    `json:"-"` 
 	FullName     string    `json:"full_name"`
 	RoleID       string    `json:"role_id"`
 	IsActive     bool      `json:"is_active"`
@@ -15,14 +15,12 @@ type User struct {
 }
 
 type LoginRequest struct {
-	Email string `json:"email" validate:"required"`
-	Username string `json:"username" validate:"required"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
 	Password string `json:"password" validate:"required"`
 }
 
 type LoginResponse struct {
-	Token string    `json:"token"`
-	User  []User `json:"user"`
+	Token string `json:"token"`
+	User  User   `json:"user"`
 }
-
-

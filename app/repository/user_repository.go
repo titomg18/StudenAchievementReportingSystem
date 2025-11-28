@@ -13,32 +13,102 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-// func (r *UserRepository) GetUserByUsernameOrEmail(identifier string) (*models.User, error) {
-// 	// Implementation sementara
-// 	return &models.User{
-// 		ID:           "test-id",
-// 		Username:     "testuser",
-// 		Email:        "test@example.com",
-// 		PasswordHash: "$2a$10$examplehash", // Ganti dengan hash bcrypt yang valid
-// 		FullName:     "Test User",
-// 		RoleID:       "role-id",
-// 		IsActive:     true,
-// 	}, nil
-// }
+// Hanya pakai 1 identifier: email ATAU username
+func (r *UserRepository) GetUserByUsernameOrEmail(identifier string) (*models.User, error) {
+	query := `
+		SELECT 
+			id,
+			username,
+			email,
+			password_hash,
+			full_name,
+			role_id,
+			is_active,
+			created_at,
+			updated_at
+		FROM users
+		WHERE email = $1 OR username = $1
+		LIMIT 1;
+	`
 
-func (r *UserRepository) GetUserByUsernameOrEmail(email, username string) (*models.User, error) {
-	return &models.User{
-		ID:           "test-id",
-		Username:     "testuser",
-		Email:        "test@example.com",
-		PasswordHash: "$2a$10$examplehash", // Ganti dengan hash bcrypt yang valid
-		FullName:     "Test User",
-		RoleID:       "role-id",
-		IsActive:     true,
-	}, nil
+	row := r.db.QueryRow(query, identifier)
+
+	var user models.User
+
+	err := row.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.PasswordHash,
+		&user.FullName,
+		&user.RoleID,
+		&user.IsActive,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil // Tidak ditemukan
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 func (r *UserRepository) GetUserPermissions(roleID string) ([]string, error) {
-	// Implementation sementara
+	// nanti bisa ambil dari DB; sementara return dummy
 	return []string{"read", "write"}, nil
 }
+
+// func NewUserRepository(db *sql.DB) *UserRepository {
+// 	return &UserRepository{db: db}
+// }
+
+// func (r *UserRepository) GetUserByUsernameOrEmail(email, username string) (*models.User, error) {
+// 	query := `
+// 		SELECT 
+// 			id,
+// 			username,
+// 			email,
+// 			password_hash,
+// 			full_name,
+// 			role_id,
+// 			is_active,
+// 			created_at,
+// 			updated_at
+// 		FROM users
+// 		WHERE email = $1 OR username = $2
+// 		LIMIT 1;
+// 	`
+
+// 	row := r.db.QueryRow(query, email, username)
+
+// 	var user models.User
+
+// 	err := row.Scan(
+// 		&user.ID,
+// 		&user.Username,
+// 		&user.Email,
+// 		&user.PasswordHash,
+// 		&user.FullName,
+// 		&user.RoleID,
+// 		&user.IsActive,
+// 		&user.CreatedAt,
+// 		&user.UpdatedAt,
+// 	)
+
+// 	if err != nil {
+// 		if err == sql.ErrNoRows {
+// 			return nil, nil // user tidak ditemukan
+// 		}
+// 		return nil, err
+// 	}
+
+// 	return &user, nil
+// }
+
+// func (r *UserRepository) GetUserPermissions(roleID string) ([]string, error) {
+// 	return []string{"read", "write"}, nil
+// }
