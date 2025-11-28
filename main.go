@@ -18,6 +18,7 @@ func main() {
 
 	userRepo := repository.NewUserRepository(db)
 	authService := services.NewAuthService(userRepo, "JWT_SECRET_123")
+	
 
 	routes.SetupRoutes(app, authService)
 

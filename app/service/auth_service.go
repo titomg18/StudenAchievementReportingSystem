@@ -13,6 +13,7 @@ import (
 
 type AuthService interface {
 	Login(request *models.LoginRequest) (*models.LoginResponse, error)
+	Register(request *models.RegisterRequest) error
 }
 
 type authService struct {
@@ -82,4 +83,24 @@ func (s *authService) generateToken(user *models.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	return token.SignedString(s.jwtKey)
+}
+
+func (s *authService) Register(req *models.RegisterRequest) error {
+
+	// hash password
+	hashed, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return errors.New("failed to hash password")
+	}
+
+	newUser := &models.User{
+		Username:     req.Username,
+		Email:        req.Email,
+		PasswordHash: string(hashed),
+		FullName:     req.FullName,
+		RoleID:       req.RoleID,
+		IsActive:     true,
+	}
+
+	return s.userRepo.CreateUser(newUser)
 }

@@ -28,4 +28,27 @@ func AuthRoutes(app *fiber.App, authService services.AuthService) {
 		// success
 		return c.JSON(resp)
 	})
+
+		app.Post("/register", func(c *fiber.Ctx) error {
+		var req models.RegisterRequest
+
+		if err := c.BodyParser(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": "invalid request body",
+			})
+		}
+
+		// panggil service
+		if err := authService.Register(&req); err != nil {
+			return c.Status(400).JSON(fiber.Map{
+				"error": err.Error(),
+			})
+		}
+
+		return c.JSON(fiber.Map{
+			"message": "User registered successfully",
+		})
+	})
+
 }
+

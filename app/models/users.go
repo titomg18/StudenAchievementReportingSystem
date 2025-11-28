@@ -24,3 +24,11 @@ type LoginResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
 }
+
+type RegisterRequest struct {
+	Username string `json:"username" validate:"required"`
+	Email    string `json:"email" validate:"required"`
+	Password string `json:"password" validate:"required"`
+	FullName string `json:"full_name" validate:"required"`
+	RoleID   string `json:"role_id" validate:"required"`
+}
