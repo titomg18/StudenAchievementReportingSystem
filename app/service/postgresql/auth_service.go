@@ -1,0 +1,129 @@
+package service
+
+import (
+	models "StudenAchievementReportingSystem/app/models/postgresql"
+	repo "StudenAchievementReportingSystem/app/repository/postgresql"
+	"StudenAchievementReportingSystem/utils"
+	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
+)
+
+type AuthService struct {
+	userRepo repo.UserRepository
+}
+
+func NewAuthService(userRepo repo.UserRepository) *AuthService {
+	return &AuthService{userRepo: userRepo}
+}
+
+func (s *AuthService) Login(c *fiber.Ctx) error {
+	var req struct {
+		Username string `json:"username"`
+		Password string `json:"password"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid JSON"})
+	}
+
+	user, roleName, err := s.userRepo.GetByUsername(req.Username)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
+	}
+
+	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
+	}
+
+	if !user.IsActive {
+		return c.Status(403).JSON(fiber.Map{"error": "account is inactive"})
+	}
+
+	permissions, err := s.userRepo.GetPermissionsByRoleID(user.RoleID)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	tokenString, err := utils.GenerateToken(user, roleName, permissions)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	refresh, err := utils.GenerateRefreshToken(user)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(models.LoginResponse{
+		Token:        tokenString,
+		RefreshToken: refresh,
+		User: models.UserResp{
+			ID:          user.ID,
+			Username:    user.Username,
+			FullName:    user.FullName,
+			Role:        roleName,
+			Permissions: permissions,
+		},
+	})
+}
+
+func (s *AuthService) Refresh(c *fiber.Ctx) error {
+	var req struct {
+		RefreshToken string `json:"refreshToken"`
+	}
+
+	if err := c.BodyParser(&req); err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid request"})
+	}
+
+	claims, err := utils.ValidateRefreshToken(req.RefreshToken)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "invalid refresh token"})
+	}
+
+	userID, err := uuid.Parse(claims.UserID)
+	if err != nil {
+		return c.Status(400).JSON(fiber.Map{"error": "invalid user id"})
+	}
+
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	permissions, _ := s.userRepo.GetPermissionsByRoleID(user.RoleID)
+	_, roleName, _ := s.userRepo.GetByUsername(user.Username)
+
+	newToken, err := utils.GenerateToken(user, roleName, permissions)
+	if err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": err.Error()})
+	}
+
+	return c.JSON(fiber.Map{"token": newToken})
+}
+
+func (s *AuthService) Logout(c *fiber.Ctx) error {
+	return c.JSON(fiber.Map{
+		"message": "logout successful",
+	})
+}
+
+func (s *AuthService) Profile(c *fiber.Ctx) error {
+	userID := c.Locals("user_id").(uuid.UUID)
+
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "user not found"})
+	}
+
+	permissions, _ := s.userRepo.GetPermissionsByRoleID(user.RoleID)
+	_, roleName, _ := s.userRepo.GetByUsername(user.Username)
+
+	return c.JSON(models.UserResp{
+		ID:          user.ID,
+		Username:    user.Username,
+		FullName:    user.FullName,
+		Role:        roleName,
+		Permissions: permissions,
+	})
+}

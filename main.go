@@ -1,27 +1,46 @@
 package main
 
 import (
-	"log"
+    "fmt"
+    "log"
+    "os"
 
-	"github.com/gofiber/fiber/v2"
+    "github.com/gofiber/fiber/v2"
 
-	"StudenAchievementReportingSystem/routes"
-	"StudenAchievementReportingSystem/database"
-	"StudenAchievementReportingSystem/app/repository"
-	"StudenAchievementReportingSystem/app/service"
+    "StudenAchievementReportingSystem/config"
+    "StudenAchievementReportingSystem/database"
+    "StudenAchievementReportingSystem/routes"
 )
 
 func main() {
-	app := fiber.New()
 
-	db := database.ConnectDB()
+    // 1. Load .env
+    config.LoadEnv()
 
-	userRepo := repository.NewUserRepository(db)
-	authService := services.NewAuthService(userRepo, "JWT_SECRET_123")
-	
+    // 2. Connect PostgreSQL
+    database.ConnectPostgres()
+    defer database.PostgresDB.Close()
 
-	routes.SetupRoutes(app, authService)
+    // 3. Connect MongoDB (jika ada)
+    database.ConnectMongo()
 
-	log.Println("Server running on :3000")
-	app.Listen(":3000")
+    // 4. Inisialisasi Fiber
+    app := fiber.New()
+
+    // 5. Setup Routes
+    routes.SetupAuthRoutes(app, database.PostgresDB)
+
+    fmt.Println("Setup route berhasil")
+
+    // 6. Start Server
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "8080"
+    }
+
+    log.Printf("Server running on :%s", port)
+
+    if err := app.Listen(":" + port); err != nil {
+        log.Fatalf("Server stopped: %v", err)
+    }
 }
