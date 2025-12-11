@@ -4,6 +4,7 @@ import (
 	models "StudenAchievementReportingSystem/app/models/postgresql"
 	repo "StudenAchievementReportingSystem/app/repository/postgresql"
 	"StudenAchievementReportingSystem/utils"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -28,11 +29,11 @@ func (s *AuthService) Login(c *fiber.Ctx) error {
 
 	user, roleName, err := s.userRepo.GetByUsername(req.Username)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
+		return c.Status(401).JSON(fiber.Map{"error": "invalid username"})
 	}
 
 	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
-		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
+		return c.Status(401).JSON(fiber.Map{"error": "invalid password"})
 	}
 
 	if !user.IsActive {
