@@ -29,3 +29,11 @@ func SetupAuthRoutes(app *fiber.App, db *sql.DB) {
     auth.Post("/logout", middleware.AuthRequired(), authService.Logout)
     auth.Get("/profile", middleware.AuthRequired(), authService.Profile)
 }
+
+     // Students and Lecturers
+    auth.Get("/students", studentService.GetAllStudents)
+    auth.Get("/students/:id", studentService.GetStudentByID)
+    auth.Get("/students/:id/achievements", studentService.GetStudentAchievements)
+    auth.Put("/students/:id/advisor", studentService.UpdateAdvisor)
+    auth.Get("/lecturers", lecturerService.GetAllLecturers)
+    auth.Get("/lecturers/:id/advisees", lecturerService.GetAdvisees)
