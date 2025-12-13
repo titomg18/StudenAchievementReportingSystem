@@ -3,7 +3,7 @@ package repository
 import (
     "context"
 	"time"
-    models "student-performance-report/app/models/mongodb"
+    models "StudenAchievementReportingSystem/app/models/mongodb"
     "github.com/google/uuid"
     "go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/bson"

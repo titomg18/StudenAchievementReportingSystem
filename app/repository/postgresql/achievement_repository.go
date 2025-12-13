@@ -1,13 +1,11 @@
 package repository
 
-
-
 import (
     "context"
     "database/sql"
     "fmt"
     "time"
-    models "student-performance-report/app/models/postgresql"
+    models "StudenAchievementReportingSystem/app/models/postgresql"
     "github.com/google/uuid"
 )
 
