@@ -76,3 +76,13 @@ func (r *lecturerRepository) GetAdvisees(lecturerID uuid.UUID) ([]models.Student
 	return list, nil
 }
 
+
+func (r *lecturerRepository) GetLecturerByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
+    query := `SELECT id FROM lecturers WHERE user_id = $1`
+    var lecturerID uuid.UUID
+    err := r.db.QueryRowContext(ctx, query, userID).Scan(&lecturerID)
+    if err != nil {
+        return uuid.Nil, errors.New("lecturer profile not found")
+    }
+    return lecturerID, nil
+}

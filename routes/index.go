@@ -31,9 +31,12 @@ func SetupAuthRoutes(app *fiber.App, db *sql.DB) {
 }
 
      // Students and Lecturers
-    auth.Get("/students", studentService.GetAllStudents)
-    auth.Get("/students/:id", studentService.GetStudentByID)
-    auth.Get("/students/:id/achievements", studentService.GetStudentAchievements)
-    auth.Put("/students/:id/advisor", studentService.UpdateAdvisor)
-    auth.Get("/lecturers", lecturerService.GetAllLecturers)
-    auth.Get("/lecturers/:id/advisees", lecturerService.GetAdvisees)
+
+     // Students & Lecturers
+    student := app.Group("/api/v1", middleware.AuthRequired())
+    student.Get("/students", studentService.GetAllStudents)
+    student.Get("/students/:id", studentService.GetStudentByID)
+    student.Get("/students/:id/achievements", studentService.GetStudentAchievements)
+    student.Put("/students/:id/advisor", studentService.UpdateAdvisor)
+    student.Get("/lecturers", lecturerService.GetAllLecturers)
+    student.Get("/lecturers/:id/advisees", lecturerService.GetAdvisees)
