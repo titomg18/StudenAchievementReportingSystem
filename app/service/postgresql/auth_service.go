@@ -4,7 +4,6 @@ import (
 	models "StudenAchievementReportingSystem/app/models/postgresql"
 	repo "StudenAchievementReportingSystem/app/repository/postgresql"
 	"StudenAchievementReportingSystem/utils"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -17,6 +16,16 @@ func NewAuthService(userRepo repo.UserRepository) *AuthService {
 	return &AuthService{userRepo: userRepo}
 }
 
+// Login godoc
+// @Summary User Login
+// @Description Authenticate user and return token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body object{username=string,password=string} true "Login Credentials"
+// @Success 200 {object} models.LoginResponse
+// @Failure 400,401,403 {object} map[string]interface{}
+// @Router /auth/login [post]
 func (s *AuthService) Login(c *fiber.Ctx) error {
 	var req struct {
 		Username string `json:"username"`
@@ -29,11 +38,11 @@ func (s *AuthService) Login(c *fiber.Ctx) error {
 
 	user, roleName, err := s.userRepo.GetByUsername(req.Username)
 	if err != nil {
-		return c.Status(401).JSON(fiber.Map{"error": "invalid username"})
+		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
 	}
 
 	if !utils.CheckPasswordHash(req.Password, user.PasswordHash) {
-		return c.Status(401).JSON(fiber.Map{"error": "invalid password"})
+		return c.Status(401).JSON(fiber.Map{"error": "invalid username or password"})
 	}
 
 	if !user.IsActive {
@@ -68,6 +77,16 @@ func (s *AuthService) Login(c *fiber.Ctx) error {
 	})
 }
 
+// Refresh godoc
+// @Summary Refresh Access Token
+// @Description Get new access token using refresh token
+// @Tags Authentication
+// @Accept json
+// @Produce json
+// @Param request body object{refreshToken=string} true "Refresh Token"
+// @Success 200 {object} map[string]string
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /auth/refresh [post]
 func (s *AuthService) Refresh(c *fiber.Ctx) error {
 	var req struct {
 		RefreshToken string `json:"refreshToken"`
@@ -103,12 +122,28 @@ func (s *AuthService) Refresh(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{"token": newToken})
 }
 
+// Logout godoc
+// @Summary User Logout
+// @Description Logout user (Client side should clear token)
+// @Tags Authentication
+// @Security BearerAuth
+// @Success 200 {object} map[string]string
+// @Router /auth/logout [post]
 func (s *AuthService) Logout(c *fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"message": "logout successful",
 	})
 }
 
+// Profile godoc
+// @Summary Get User Profile
+// @Description Get currently logged in user profile
+// @Tags Authentication
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} models.UserResp
+// @Failure 404 {object} map[string]interface{}
+// @Router /auth/profile [get]
 func (s *AuthService) Profile(c *fiber.Ctx) error {
 	userID := c.Locals("user_id").(uuid.UUID)
 

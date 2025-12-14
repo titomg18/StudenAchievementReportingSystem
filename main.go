@@ -1,5 +1,29 @@
 package main
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+
+// @tag.name Authentication
+// @tag.description Endpoint for user authentication and login
+// @tag.order 1
+
+// @tag.name Users 
+// @tag.description Endpoint for Admin to manage users (Admin Only)
+// @tag.order 2
+
+// @tag.name Achievements
+// @tag.description Endpoint for achievement data
+// @tag.order 3
+
+// @tag.name Students & Lecturers
+// @tag.description Endpoint for student and lecturer data 
+// @tag.order 4
+
+// @tag.name Reports
+// @tag.description Endpoint for generating reports and statistics
+// @tag.order 5
+
 import (
 	"fmt"
 	"os"
@@ -11,10 +35,21 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"StudenAchievementReportingSystem/config"
 	"StudenAchievementReportingSystem/database"
+	FiberApp "StudenAchievementReportingSystem/fiber"
 	route "StudenAchievementReportingSystem/route"
 	"github.com/gofiber/swagger"
+	docs "StudenAchievementReportingSystem/docs"
 )
 
+// @title Student Performance Report API
+// @version 1.0
+// @description API untuk sistem pelaporan prestasi mahasiswa.
+// @host localhost:8080
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 
 	// 1. Load .env file
