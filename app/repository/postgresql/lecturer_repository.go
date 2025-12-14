@@ -2,7 +2,8 @@ package repository
 
 import (
 	"database/sql"
-
+	"context"
+	"errors"
 	models "StudenAchievementReportingSystem/app/models/postgresql"
 	"github.com/google/uuid"
 )
@@ -11,6 +12,7 @@ type LecturerRepository interface {
 	GetAllLecturers() ([]models.Lecturer, error)
 	GetLecturerByID(id uuid.UUID) (*models.Lecturer, error)
 	GetAdvisees(lecturerID uuid.UUID) ([]models.Student, error)
+	GetLecturerByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error)
 }
 
 type lecturerRepository struct {
@@ -76,7 +78,6 @@ func (r *lecturerRepository) GetAdvisees(lecturerID uuid.UUID) ([]models.Student
 	return list, nil
 }
 
-
 func (r *lecturerRepository) GetLecturerByUserID(ctx context.Context, userID uuid.UUID) (uuid.UUID, error) {
     query := `SELECT id FROM lecturers WHERE user_id = $1`
     var lecturerID uuid.UUID
@@ -86,3 +87,4 @@ func (r *lecturerRepository) GetLecturerByUserID(ctx context.Context, userID uui
     }
     return lecturerID, nil
 }
+
