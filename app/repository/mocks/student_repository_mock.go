@@ -8,7 +8,7 @@ import (
 
 	// Import Models
 	modelMongo "StudenAchievementReportingSystem/app/models/mongodb"
-	models "StudenAchievementReportingSystemt/app/models/postgresql"
+	models "StudenAchievementReportingSystem/app/models/postgresql"
 
 	// Import Interfaces
 	repoMongo "StudenAchievementReportingSystem/app/repository/mongodb"

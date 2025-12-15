@@ -36,7 +36,7 @@ import (
 	"StudenAchievementReportingSystem/config"
 	"StudenAchievementReportingSystem/database"
 	FiberApp "StudenAchievementReportingSystem/fiber"
-	route "StudenAchievementReportingSystem/route"
+	route "StudenAchievementReportingSystem/routes"
 	"github.com/gofiber/swagger"
 	docs "StudenAchievementReportingSystem/docs"
 )
