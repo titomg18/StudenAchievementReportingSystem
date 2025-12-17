@@ -77,4 +77,23 @@ func PermissionRequired(needed string) fiber.Handler {
             "error": "permission denied: needed '" + needed + "'",
         })
     }
-}
+        }
+
+        func HasPermission(c *fiber.Ctx, needed string) bool {
+            raw := c.Locals("permissions")
+            if raw == nil {
+                return false
+            }
+
+            perms, ok := raw.([]string)
+            if !ok {
+                return false
+            }
+
+            for _, p := range perms {
+                if p == needed {
+                    return true
+                }
+            }
+            return false
+        }

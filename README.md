@@ -80,7 +80,7 @@ The Student Performance Reporting System is a comprehensive backend solution des
 ### Project Structure
 
 ```
-student-performance-report
+StudenAchievementReportingSystem
 ├── app       
 │   ├── models           # Data Structures / Entities
 │   │   ├── mongodb      # Structs for MongoDB collections (Achievement details)
