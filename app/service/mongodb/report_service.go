@@ -17,9 +17,17 @@ func NewReportService(m repoMongo.AchievementRepository, s repoPg.StudentReposit
     return &ReportService{mongoRepo: m, studentRepo: s}
 }
 
+// GetStatistics godoc
+// @Summary Get Global Statistics
+// @Description Get achievement statistics and leaderboard (Admin only)
+// @Tags Reports
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {object} map[string]interface{}
+// @Failure 500 {object} map[string]interface{}
+// @Router /reports/statistics [get]
 func (s *ReportService) GetStatistics(c *fiber.Ctx) error {
     ctx := c.Context()
-
     if !middleware.HasPermission(c, "report:students") {
     return fiber.ErrForbidden
     }
@@ -47,6 +55,16 @@ func (s *ReportService) GetStatistics(c *fiber.Ctx) error {
     return c.JSON(stats)
 }
 
+// GetStudentReport godoc
+// @Summary Get Student Report
+// @Description Get specific statistics for a student
+// @Tags Reports
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Student UUID"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400,500 {object} map[string]interface{}
+// @Router /reports/student/{id} [get]
 func (s *ReportService) GetStudentReport(c *fiber.Ctx) error {
     ctx := c.Context()
     if !middleware.HasPermission(c, "report:students") {

@@ -44,6 +44,18 @@ func getUserIDFromToken(c *fiber.Ctx) (uuid.UUID, error) {
     return uuid.Nil, errors.New("server error: user_id format invalid (expected string or uuid)")
 }
 
+
+// CreateAchievement godoc
+// @Summary Create New Achievement Draft
+// @Description Create a new achievement draft (Student only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param request body modelMongo.Achievement true "Achievement Data"
+// @Success 201 {object} map[string]interface{}
+// @Failure 400,401,404,500 {object} map[string]interface{}
+// @Router /achievements [post]
 func (s *AchievementService) CreateAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
     if !middleware.HasPermission(c, "achievement:create") {
@@ -97,6 +109,19 @@ func (s *AchievementService) CreateAchievement(c *fiber.Ctx) error {
     })
 }
 
+// GetAllAchievements godoc
+// @Summary Get List of Achievements
+// @Description Get paginated list of achievements. Filter logic depends on role (Student: own data, Lecturer: advisees data).
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param page query int false "Page number (default 1)"
+// @Param limit query int false "Items per page (default 10)"
+// @Param status query string false "Filter by status (draft, submitted, verified, rejected)"
+// @Param sort query string false "Sort direction"
+// @Success 200 {object} modelPg.PaginatedResponse
+// @Failure 401,500 {object} map[string]interface{}
+// @Router /achievements [get]
 func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
     ctx := c.Context()
     if !middleware.HasPermission(c, "achievement:read") {
@@ -107,6 +132,7 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
     if err != nil {
         return c.Status(401).JSON(fiber.Map{"error": err.Error()}) 
     }
+   
 
     var query modelPg.PaginationQuery
     if err := c.QueryParser(&query); err != nil {
@@ -127,7 +153,7 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
         if query.Status != "" {
             filters["status"] = query.Status
         }
-    } 
+    }
     
     lecturerID, err := s.lecturer.GetLecturerByUserID(ctx, userID)
     if  err == nil { 
@@ -152,6 +178,7 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
                 },
             })
         }
+
         filters["student_ids"] = studentIDs
 
         if query.Status != "" {
@@ -214,10 +241,20 @@ func (s *AchievementService) GetAllAchievements(c *fiber.Ctx) error {
     })
 }
 
+// GetAchievementDetail godoc
+// @Summary Get Achievement Detail
+// @Description Get full details of a specific achievement including MongoDB data
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id} [get]
 func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
     ctx := c.Context()
     if !middleware.HasPermission(c, "achievement:read") {
-        return fiber.ErrForbidden
+    return fiber.ErrForbidden
     }
 
     achievementID, err := uuid.Parse(c.Params("id"))
@@ -237,7 +274,6 @@ func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
 
     currentStudentID, err := s.pgRepo.GetStudentByUserID(ctx, userID)
     if err == nil {
-
         if ref.StudentID != currentStudentID {
             return c.Status(403).JSON(fiber.Map{"error": "Forbidden: You cannot view this achievement"})
         }
@@ -282,11 +318,22 @@ func (s *AchievementService) GetAchievementDetail(c *fiber.Ctx) error {
     return c.JSON(response)
 }
 
+// SubmitAchievement godoc
+// @Summary Submit Achievement
+// @Description Submit a draft achievement for verification (Student only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Success 200 {object} map[string]string
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id}/submit [post]
 func (s *AchievementService) SubmitAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:create") {
+    if !middleware.HasPermission(c, "achievement:create") {
     return fiber.ErrForbidden
     }
+
     achievementID, err := uuid.Parse(c.Params("id"))
     if err != nil {
         return c.Status(400).JSON(fiber.Map{"error": "Invalid ID"}) 
@@ -323,6 +370,16 @@ func (s *AchievementService) SubmitAchievement(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{"status": "success", "message": "Achievement submitted for verification"})
 }
 
+// DeleteAchievement godoc
+// @Summary Delete Achievement
+// @Description Delete an achievement (Only allowed if status is draft)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Success 200 {object} map[string]string
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id} [delete]
 func (s *AchievementService) DeleteAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
     if !middleware.HasPermission(c, "achievement:delete") {
@@ -366,10 +423,21 @@ func (s *AchievementService) DeleteAchievement(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{"message": "Achievement deleted successfully"})
 }
 
+// VerifyAchievement godoc
+// @Summary Verify Achievement
+// @Description Approve a submitted achievement (Lecturer/Dosen Wali only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Success 200 {object} map[string]string
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id}/verify [post]
 func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:verify") {
-    return fiber.ErrForbidden
+
+    if !middleware.HasPermission(c, "achievement:verify") {
+        return fiber.ErrForbidden
     }
 
     achievementID, err := uuid.Parse(c.Params("id"))
@@ -398,7 +466,7 @@ func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
     if req.Points <= 0 {
         return c.Status(400).JSON(fiber.Map{
             "error": "Points must be greater than 0",
-        }) 
+        })
     }
 
     ref, err := s.pgRepo.GetReferenceByID(ctx, achievementID)
@@ -406,7 +474,6 @@ func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
         return c.Status(404).JSON(fiber.Map{"error": "Achievement not found"})
     }
 
-   
     if ref.Status != "submitted" {
         return c.Status(400).JSON(fiber.Map{
             "error": "Achievement must be in 'submitted' status to be verified",
@@ -436,9 +503,22 @@ func (s *AchievementService) VerifyAchievement(c *fiber.Ctx) error {
     })
 }
 
+
+// RejectAchievement godoc
+// @Summary Reject Achievement
+// @Description Reject a submitted achievement with a note (Lecturer/Dosen Wali only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Param request body object{note=string} true "Rejection Note"
+// @Success 200 {object} map[string]string
+// @Failure 400,401,403,500 {object} map[string]interface{}
+// @Router /achievements/{id}/reject [post]
 func (s *AchievementService) RejectAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:verify") {
+    if !middleware.HasPermission(c, "achievement:verify") {
     return fiber.ErrForbidden
     }
 
@@ -467,9 +547,21 @@ func (s *AchievementService) RejectAchievement(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{"status": "success", "message": "Rejected"})
 }
 
+// UpdateAchievement godoc
+// @Summary Update Achievement
+// @Description Update achievement data (Only allowed if status is draft)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Param request body modelMongo.Achievement true "Updated Data"
+// @Success 200 {object} map[string]string
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id} [put]
 func (s *AchievementService) UpdateAchievement(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:update") {
+    if !middleware.HasPermission(c, "achievement:update") {
     return fiber.ErrForbidden
     }
 
@@ -514,9 +606,19 @@ func (s *AchievementService) UpdateAchievement(c *fiber.Ctx) error {
     return c.JSON(fiber.Map{"message": "Achievement updated successfully"})
 }
 
+// GetAchievementHistory godoc
+// @Summary Get Achievement History
+// @Description Get status history log of an achievement
+// @Tags Achievements
+// @Security BearerAuth
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Success 200 {array} map[string]interface{}
+// @Failure 400,401,404 {object} map[string]interface{}
+// @Router /achievements/{id}/history [get]
 func (s *AchievementService) GetAchievementHistory(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:read") {
+    if !middleware.HasPermission(c, "achievement:read") {
     return fiber.ErrForbidden
     }
 
@@ -568,9 +670,21 @@ func (s *AchievementService) GetAchievementHistory(c *fiber.Ctx) error {
     return c.JSON(history)
 }
 
+// UploadAttachments godoc
+// @Summary Upload Attachment
+// @Description Upload a file attachment for an achievement (Draft only)
+// @Tags Achievements
+// @Security BearerAuth
+// @Accept multipart/form-data
+// @Produce json
+// @Param id path string true "Achievement ID (UUID)"
+// @Param file formData file true "File to upload"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400,401,403,404,500 {object} map[string]interface{}
+// @Router /achievements/{id}/attachments [post]
 func (s *AchievementService) UploadAttachments(c *fiber.Ctx) error {
     ctx := c.Context()
-        if !middleware.HasPermission(c, "achievement:create") {
+    if !middleware.HasPermission(c, "achievement:create") {
     return fiber.ErrForbidden
     }
 
